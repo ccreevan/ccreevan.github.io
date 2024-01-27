@@ -269,214 +269,92 @@ display: none;
 
 <section class="main-content">
 <p>A salesperson’s phone time is an important metric to track in the
-collections industry. The clients phone company provides analytics but
-the data needs to be cleaned and transformed.</p>
-<p>A sample of the data set showing the raw output from the phone
-provider is below.</p>
-<table style="width:100%;">
-<colgroup>
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-</colgroup>
-<tbody>
-<tr class="odd">
-<td align="center">User</td>
-<td align="center">Total</td>
-<td align="center">Inbound</td>
-<td align="center">Outbound</td>
-<td align="center">Total talk time</td>
-<td align="center">Inbound talk time</td>
-<td align="center">Outbound talk time</td>
-</tr>
-<tr class="even">
-<td align="center">Sophia Foster</td>
-<td align="center">51</td>
-<td align="center">1</td>
-<td align="center">51</td>
-<td align="center">1h 16m 31s</td>
-<td align="center">3m 39s</td>
-<td align="center">1h 12m 52s</td>
-</tr>
-<tr class="odd">
-<td align="center">Caleb Ennet</td>
-<td align="center">3</td>
-<td align="center">3</td>
-<td align="center">0</td>
-<td align="center">53s</td>
-<td align="center">53s</td>
-<td align="center">0s</td>
-</tr>
-<tr class="even">
-<td align="center">Isabella Ramirez</td>
-<td align="center">47</td>
-<td align="center">5</td>
-<td align="center">42</td>
-<td align="center">42m 11s</td>
-<td align="center">6m 6s</td>
-<td align="center">36m 5s</td>
-</tr>
-</tbody>
-</table>
-<p>To transform this data we parse down to the useful columns (User,
-Total, Total Talk Time), add a date column, then upload to a SQL
-database.</p>
-<p>The total_time column is not usable as a string. A series of CASE
-WHEN statements in a SQL query converts the string to minutes, checking
-if there is an ‘h’, ‘m’ or ‘s’ in the row then stores the number in
-hours, minutes, and seconds column:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="kw">SELECT</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>    <span class="cf">CASE</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>        <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>        <span class="cf">ELSE</span> <span class="dv">0</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>    <span class="cf">END</span> <span class="kw">AS</span> hours,</span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>    <span class="cf">CASE</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>        <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">AND</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time)</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">+</span> <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>        <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>        <span class="cf">ELSE</span> <span class="dv">0</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>    <span class="cf">END</span> <span class="kw">AS</span> minutes,</span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>    <span class="cf">CASE</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>        <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">AND</span> CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">&gt;</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time)</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">+</span> <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">-</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>        <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>        <span class="cf">ELSE</span> <span class="dv">0</span></span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>    <span class="cf">END</span> <span class="kw">AS</span> seconds</span>
-<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="kw">FROM</span></span>
-<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>    phone_analytics;</span></code></pre></div>
-<p>We convert to minutes duration by building a subquery of the above,
-convert the hours and minutes to seconds, sum them together, then divide
-by 60.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="kw">SELECT</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>    <span class="fu">SUM</span>( hours <span class="op">*</span> <span class="dv">3600</span> <span class="op">+</span> minutes <span class="op">*</span> <span class="dv">60</span> <span class="op">+</span> <span class="fu">CAST</span>( seconds <span class="kw">AS</span> <span class="dt">NUMERIC</span> (<span class="dv">10</span>,<span class="dv">2</span>) ) ) <span class="op">/</span> <span class="dv">60</span>  <span class="kw">AS</span> total_minutes</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="kw">FROM</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    [<span class="op">..</span>.subquery goes here<span class="op">..</span>.]</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    ) <span class="kw">AS</span> pt</span></code></pre></div>
-<p>This gets us the total minutes as an aggregate, but we want to group
-it by the date and name of the caller. We add in name, date, and total
-calls to our SELECT clause in the subquery and main query:</p>
+collections industry. The clients phone company provides which has been
+transferred and stored on a local database to be used for analytics.</p>
+<p>The query was broken down into phone call and employee data using
+table expressions then aggregated:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="kw">WITH</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>    calls</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>    <span class="kw">AS</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>    (</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>        <span class="kw">SELECT</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>            <span class="fu">CAST</span> ( <span class="dt">time</span> <span class="kw">AS</span> <span class="dt">DATE</span>) [<span class="dt">date</span>],</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>            emp_id,</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>            <span class="fu">COUNT</span> ( <span class="op">*</span> ) <span class="kw">AS</span> [total_calls],</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>            <span class="fu">SUM</span> ( duration ) <span class="kw">AS</span> [total_talk_time],</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>            <span class="fu">AVG</span> ( duration ) [Average <span class="dt">Time</span>]</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>        <span class="kw">FROM</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>            phone_calls</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>        <span class="kw">WHERE</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>            <span class="dt">time</span> <span class="op">&gt;</span> DATEADD ( <span class="dt">DAY</span>, <span class="dv">1</span>, DATEADD ( <span class="dt">MONTH</span>, <span class="op">-</span><span class="dv">1</span>, EOMONTH ( <span class="fu">CURRENT_TIMESTAMP</span> ) ) ) <span class="kw">AND</span> <span class="dt">time</span> <span class="op">&lt;=</span> EOMONTH ( <span class="fu">CURRENT_TIMESTAMP</span> )</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>        <span class="kw">GROUP</span> <span class="kw">BY</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>            <span class="fu">CAST</span> ( <span class="dt">time</span> <span class="kw">AS</span> <span class="dt">DATE</span> ),</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>            emp_id</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>    )</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>    employees</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>    <span class="kw">AS</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>    (</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>        <span class="kw">SELECT</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>            e.emp_id,</span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>            e.first_name <span class="op">+</span> <span class="st">&#39; &#39;</span> <span class="op">+</span> e.last_name <span class="kw">AS</span> [employee_name],</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>            <span class="cf">CASE</span></span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>                <span class="cf">WHEN</span> aliasname <span class="kw">IN</span> ( <span class="st">&#39;Valory Johnson&#39;</span>, <span class="st">&#39;Trevor Kizkeh&#39;</span> ) <span class="cf">THEN</span> <span class="dv">10800</span></span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>                <span class="cf">WHEN</span> ec.<span class="kw">category</span> <span class="kw">IN</span> ( <span class="st">&#39;NC Collections&#39;</span> ) <span class="cf">THEN</span> <span class="dv">10800</span></span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>                <span class="cf">ELSE</span> <span class="kw">NULL</span></span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a>            <span class="cf">END</span> budget</span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>        <span class="kw">FROM</span></span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>            SQLSVR.sdb.dbo.emp <span class="kw">AS</span> e</span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a>            <span class="kw">LEFT</span> <span class="kw">JOIN</span> SQLSVR.sdb.dbo.cat ec <span class="kw">ON</span> e.cat_id <span class="op">=</span> ec.cat_id</span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a>        <span class="kw">WHERE</span></span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a>            is_employed <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>            <span class="kw">AND</span> is_primary <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>    ),</span></code></pre></div>
+<p>The monthly summary of the employees phone times:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>    monthly_summary</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>    <span class="kw">AS</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    (</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>        <span class="kw">SELECT</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>            emp.emp_id,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>            ISNULL ( c.<span class="dt">date</span>, DATEADD( <span class="dt">DAY</span>, <span class="op">-</span><span class="dv">1</span>, <span class="fu">CURRENT_TIMESTAMP</span> ) ) <span class="kw">AS</span> [call_date],</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>            emp.username,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>            ISNULL ( c.total_calls, <span class="dv">0</span> ) <span class="kw">AS</span> [total_calls],</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>            <span class="fu">CONVERT</span> ( <span class="dt">VARCHAR</span>, DATEADD ( ss, c.total_talk_time, <span class="dv">0</span> ), <span class="dv">108</span> ) <span class="kw">AS</span> [total_talk_time],</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>            ISNULL ( i.total_calls, <span class="dv">0</span> ) <span class="kw">AS</span> [total_internal_calls],</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>            <span class="fu">CONVERT</span> ( <span class="dt">VARCHAR</span>, DATEADD ( ss, i.internal_talk_time, <span class="dv">0</span> ), <span class="dv">108</span> ) <span class="kw">AS</span> [internal_talk_time],</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>            <span class="fu">CONVERT</span> ( <span class="dt">VARCHAR</span>, DATEADD ( ss, emp.budget, <span class="dv">0</span> ) , <span class="dv">108</span> ) <span class="kw">AS</span> [budget],</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>            FORMAT ( <span class="fl">1.0</span> <span class="op">*</span> c.total_talk_time <span class="op">/</span> emp.budget, <span class="st">&#39;0.0 %&#39;</span> ) <span class="kw">AS</span> [budget_pct],</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>            <span class="fu">SUM</span> (<span class="cf">CASE</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>                <span class="cf">WHEN</span> <span class="fl">1.0</span> <span class="op">*</span> c.total_talk_time <span class="op">/</span> emp.budget <span class="op">&gt;=</span> <span class="dv">1</span> <span class="cf">THEN</span> <span class="dv">1</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>                <span class="cf">ELSE</span> <span class="dv">0</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>            <span class="cf">END</span>) <span class="kw">OVER</span> (<span class="kw">PARTITION</span> <span class="kw">BY</span> emp.emp_id <span class="kw">ORDER</span> <span class="kw">BY</span> ec.<span class="dt">date</span>) <span class="kw">AS</span> [mtd_met]</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>        <span class="kw">FROM</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>            employees emp</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>            <span class="kw">LEFT</span> <span class="kw">JOIN</span> calls c <span class="kw">ON</span> emp.emp_id <span class="op">=</span> c.emp_id</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>            <span class="kw">LEFT</span> <span class="kw">JOIN</span> internal_calls i <span class="kw">on</span> emp.emp_id <span class="op">=</span> i.emp_id <span class="kw">AND</span> ec.<span class="dt">date</span> <span class="op">=</span> i.<span class="dt">date</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>        <span class="kw">WHERE</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>            budget <span class="kw">IS</span> <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>            <span class="kw">AND</span> emp.username <span class="kw">NOT</span> <span class="kw">IN</span> (</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>                <span class="st">&#39;James Penrose&#39;</span>,</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>                <span class="st">&#39;William Guillermo&#39;</span>,</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>                <span class="st">&#39;Thomas Seamus&#39;</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>                )</span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>    )</span></code></pre></div>
+<p>The final aggregate query:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="kw">SELECT</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>    <span class="dt">date</span>,</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    name,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    total_calls,</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="fu">SUM</span>( hours <span class="op">*</span> <span class="dv">3600</span> <span class="op">+</span> minutes <span class="op">*</span> <span class="dv">60</span> <span class="op">+</span> <span class="fu">CAST</span>( seconds <span class="kw">AS</span> <span class="dt">NUMERIC</span> (<span class="dv">10</span>,<span class="dv">2</span>) ) ) <span class="op">/</span> <span class="dv">60</span>  <span class="kw">AS</span> total_minutes</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="kw">FROM</span> (</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>    <span class="kw">SELECT</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>        <span class="dt">date</span>,</span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>        name,</span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>        total_calls,</span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>        <span class="cf">CASE</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>            <span class="cf">ELSE</span> <span class="dv">0</span> <span class="cf">END</span> <span class="kw">AS</span> hours,</span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>        <span class="cf">CASE</span></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">AND</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time)</span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">+</span> <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>            <span class="cf">ELSE</span> <span class="dv">0</span> <span class="cf">END</span> <span class="kw">AS</span> minutes,</span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>        <span class="cf">CASE</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">AND</span> CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">&gt;</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time)</span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">+</span> <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">-</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>            <span class="cf">ELSE</span> <span class="dv">0</span> <span class="cf">END</span> <span class="kw">AS</span> seconds</span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="kw">FROM</span> phone_analytics</span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>) <span class="kw">AS</span> pt</span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span></span>
-<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    <span class="dt">date</span>,</span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>    name,</span>
-<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    total_calls</span></code></pre></div>
-<table>
-<tbody>
-<tr class="odd">
-<td>date</td>
-<td>name</td>
-<td>total_calls</td>
-<td>total_minutes</td>
-</tr>
-<tr class="even">
-<td>2023-06-13</td>
-<td>Sophia Foster</td>
-<td>188</td>
-<td>100.683333</td>
-</tr>
-<tr class="odd">
-<td>2023-06-13</td>
-<td>Caleb Bennett</td>
-<td>5</td>
-<td>1.033333</td>
-</tr>
-<tr class="even">
-<td>2023-06-13</td>
-<td>Amanda Vazquez</td>
-<td>67</td>
-<td>111.016666</td>
-</tr>
-</tbody>
-</table>
-<p>We can add to the data to expand on our clients’ analytics. The
-required phone time for each employee varies based on the amount of
-accounts they are responsible for. We have this data on hand from
-another table listing the employees’ division and phone time
-budgets.</p>
-<p>The phone time budget is stored in a reference table along with the
-employee divisions and joined to the phone_analytics table to match the
-time budget to the employee and calculate the percentage of budget
-achieved. Slight alterations and formatting changes give us the final
-result:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="kw">SELECT</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>    <span class="dt">date</span>,</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>    name,</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    total_calls,</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>    <span class="fu">CAST</span> ( <span class="fu">SUM</span>( hours <span class="op">*</span> <span class="dv">3600</span> <span class="op">+</span> minutes <span class="op">*</span> <span class="dv">60</span> <span class="op">+</span> <span class="fu">CAST</span>( seconds <span class="kw">AS</span> <span class="dt">NUMERIC</span> (<span class="dv">6</span>,<span class="dv">2</span>) ) ) <span class="op">/</span> <span class="dv">60</span> <span class="kw">AS</span> <span class="dt">NUMERIC</span> (<span class="dv">8</span>,<span class="dv">2</span>) ) total_minutes,</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>    pb.time_budget,</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    <span class="fu">CAST</span>( ( <span class="fu">SUM</span>( hours <span class="op">*</span> <span class="dv">3600</span> <span class="op">+</span> minutes <span class="op">*</span> <span class="dv">60</span> <span class="op">+</span> <span class="fu">CAST</span>( seconds <span class="kw">AS</span> <span class="dt">NUMERIC</span> (<span class="dv">6</span>,<span class="dv">2</span>) ) ) <span class="op">/</span> <span class="dv">60</span> ) <span class="op">/</span> pb.Time_Budget <span class="kw">AS</span> <span class="dt">NUMERIC</span> (<span class="dv">8</span>,<span class="dv">2</span>) ) budget_percentage</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="kw">FROM</span> (</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>    <span class="kw">SELECT</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>        <span class="dt">date</span>,</span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>        name,</span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>        total_calls,</span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>        <span class="cf">CASE</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>            <span class="cf">ELSE</span> <span class="dv">0</span> <span class="cf">END</span> <span class="kw">AS</span> hours,</span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>        <span class="cf">CASE</span></span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">AND</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time)</span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">+</span> <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> CHARINDEX(<span class="st">&#39;h&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>            <span class="cf">ELSE</span> <span class="dv">0</span> <span class="cf">END</span> <span class="kw">AS</span> minutes,</span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>        <span class="cf">CASE</span></span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">AND</span> CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">&gt;</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time)</span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">+</span> <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">-</span> CHARINDEX(<span class="st">&#39;m&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>            <span class="cf">WHEN</span> CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>            <span class="cf">THEN</span> <span class="fu">CAST</span>(SUBSTRING(total_time, <span class="dv">1</span>, CHARINDEX(<span class="st">&#39;s&#39;</span>, total_time) <span class="op">-</span> <span class="dv">1</span>) <span class="kw">AS</span> <span class="dt">INT</span>)</span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>            <span class="cf">ELSE</span> <span class="dv">0</span> <span class="cf">END</span> <span class="kw">AS</span> seconds</span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>    <span class="kw">FROM</span> test_phone_analytics</span>
-<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>) <span class="kw">AS</span> pt</span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>    <span class="kw">LEFT</span> <span class="kw">JOIN</span> Emp e <span class="kw">on</span> e.AliasName <span class="op">=</span> pt.name</span>
-<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>    <span class="kw">LEFT</span> <span class="kw">JOIN</span> test_phone_budget pb <span class="kw">ON</span> pb.Desig <span class="op">=</span> e.Desig</span>
-<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="kw">WHERE</span></span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>    time_budget <span class="kw">IS</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="co">-- Duplicates, why?</span></span>
-<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span></span>
-<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a>    <span class="dt">date</span>,</span>
-<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a>    name,</span>
-<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a>    total_calls,</span>
-<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a>    time_budget</span></code></pre></div>
-<p>Notice the WHERE clause put in. Likely this is a cause of the
-underlying data structure as the Desig column is not a primary key or
-unique, causing duplicates if they appear multiple times in the
-Employees table. Inserting a SELECT DISTINCT clause does not fix the
-issue and further investigation is best practice to ensure data
-integrity.</p>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>    <span class="op">*</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="kw">FROM</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    monthly_summary</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="kw">WHERE</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    call_date <span class="op">=</span> <span class="fu">CAST</span> ( DATEADD ( <span class="dt">DAY</span>, <span class="op">-</span><span class="dv">1</span>, <span class="fu">CURRENT_TIMESTAMP</span> ) <span class="kw">AS</span> <span class="dt">DATE</span> )</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>    LEN ( budget_pct ) <span class="kw">DESC</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>    budget_pct <span class="kw">DESC</span> <span class="co">-- A clever workaround from stackoverflow for ordering ints converted to strings.</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>;</span></code></pre></div>
+<p>After satisfying client requirements, the next step is to abstract
+the query into a stored procedure with variables. This allows an
+application to securely call the query without worrying about vectors of
+attack such as a SQL injection.</p>
 <p><a href="https://www.freepik.com/free-photo/customer-service-cute-guy-grey-suit-with-computer-headset-holding-fists-up_26220283.htm">Image
 by KamranAydinov</a> on Freepik</p>
 </section>
